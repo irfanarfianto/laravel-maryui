@@ -17,13 +17,13 @@ new class extends Component {
     <div>
         <x-tabs wire:model="users-tab">
             <x-tab name="users-tab" label="Update User" icon="o-users">
-                <livewire:profile.update-profile-information-form />
+                <livewire:pages.profile.update-profile-information-form />
             </x-tab>
             <x-tab name="tricks-tab" label="Update Password" icon="o-lock-closed">
-                <livewire:profile.update-password-form />
+                <livewire:pages.profile.update-password-form />
             </x-tab>
             <x-tab name="musics-tab" label="Hapus akun" icon="o-trash">
-                <livewire:profile.delete-user-form />
+                <livewire:pages.profile.delete-user-form />
             </x-tab>
         </x-tabs>
     </div>
