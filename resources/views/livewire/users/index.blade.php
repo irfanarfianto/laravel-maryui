@@ -64,6 +64,13 @@ new class extends Component {
     // Save user changes or add a new user
     public function saveUser(): void
     {
+        // Validation
+        $this->validate([
+            'newUserName' => 'required|string|max:255',
+            'newUserEmail' => 'required|email|unique:users,email,' . ($this->editingUser->id ?? 'NULL'),
+            'newUserPassword' => $this->editingUser ? 'nullable|min:6' : 'required|min:6',
+        ]);
+
         if ($this->editingUser) {
             // Update existing user
             $this->editingUser->name = $this->newUserName;
@@ -72,13 +79,13 @@ new class extends Component {
                 $this->editingUser->password = bcrypt($this->newUserPassword); // Update password if provided
             }
             $this->editingUser->save();
-            $this->success("User #{$this->editingUser->id} updated.", position: 'toast-bottom');
+            $this->success("User {$this->newUserName} updated.", position: 'toast-bottom');
         } else {
             // Create a new user
             User::create([
                 'name' => $this->newUserName,
                 'email' => $this->newUserEmail,
-                'password' => bcrypt($this->newUserPassword), // Hash the password before saving
+                'password' => bcrypt($this->newUserPassword),
             ]);
             $this->success("User {$this->newUserName} added.", position: 'toast-bottom');
         }
@@ -126,13 +133,31 @@ new class extends Component {
     {
         $this->resetPage();
     }
+
+    public function openAddUserModal(): void
+    {
+        $this->resetInputFields(); // Clear fields before adding a new user
+        $this->addUserModal = true;
+    }
+
+    public function getInitials($name)
+    {
+        $nameParts = explode(' ', $name);
+        $initials = '';
+
+        foreach ($nameParts as $part) {
+            $initials .= strtoupper($part[0]);
+        }
+
+        return $initials;
+    }
 };
 ?>
 
 
 <div>
     <!-- HEADER -->
-    <x-header title="Users" separator progress-indicator>
+    <x-header title="Users" separator>
         <x-slot:middle class="!justify-end">
             <div class="flex items-center space-x-2">
                 <x-input placeholder="Search..." wire:model.live.debounce="search" clearable icon="o-magnifying-glass" />
@@ -153,9 +178,9 @@ new class extends Component {
                 @scope('actions', $user)
                     <div class="flex space-x-2">
                         <x-button icon="o-pencil" wire:click="editUser({{ $user['id'] }})"
-                            class="btn-ghost btn-sm text-blue-500" />
+                            class="btn-ghost btn-sm text-blue-500" spinner />
                         <x-button icon="o-trash" wire:click="confirmDelete({{ $user['id'] }})"
-                            class="btn-ghost btn-sm text-red-500" />
+                            class="btn-ghost btn-sm text-red-500" spinner />
                     </div>
                 @endscope
             </x-table>
@@ -176,7 +201,7 @@ new class extends Component {
     </x-modal>
 
     <!-- EDIT USER DRAWER -->
-    <x-drawer wire:model="editDrawer" title="Edit User" right class="lg:w-1/3">
+    <x-drawer wire:model="editDrawer" title="Edit User" right class="W-full lg:w-1/3">
         <div class="space-y-4">
             <x-input label="Name" placeholder="Enter name" wire:model="newUserName" />
             <x-input label="Email" placeholder="Enter email" type="email" wire:model="newUserEmail" />

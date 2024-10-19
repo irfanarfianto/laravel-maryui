@@ -46,9 +46,9 @@
                     <x-menu-separator />
                 @endif
 
-                <x-menu-item title="Dashboard" icon="o-users" link="/" />
-                <x-menu-item title="Users" icon="o-users" link="/users" />
-                <x-menu-sub title="Settings" icon="o-cog-6-tooth">
+                <x-menu-item title="Dashboard" icon="m-presentation-chart-bar" link="/" />
+                <x-menu-item title="Users" icon="m-users" link="/users" />
+                <x-menu-sub title="Settings" icon="m-cog-6-tooth">
                     <x-menu-item title="Wifi" icon="o-wifi" link="####" />
                     <x-menu-item title="Archives" icon="o-archive-box" link="####" />
                 </x-menu-sub>
