@@ -120,7 +120,7 @@ new class extends Component {
                 $query->where('name', 'like', '%' . $this->search . '%');
             })
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
-            ->paginate(20);
+            ->paginate(10);
     }
 
     public function with(): array
@@ -160,10 +160,10 @@ new class extends Component {
 
 <div>
     <!-- HEADER -->
-    <x-header title="Users" separator>
+    <x-header title="Users" separator progress-indicator>
         <x-slot:middle class="!justify-end">
             <div class="flex items-center space-x-2">
-                <x-input placeholder="Search..." wire:model.live.debounce="search"  icon="o-magnifying-glass" />
+                <x-input placeholder="Search..." wire:model.live.debounce="search" icon="o-magnifying-glass" />
                 <x-button label="Tambah User" class="btn-primary" icon="o-user-plus" wire:click="openAddUserModal"
                     spinner />
             </div>
