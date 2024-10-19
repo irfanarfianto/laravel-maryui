@@ -34,6 +34,7 @@ new class extends Component {
             $this->newUserName = $this->editingUser->name;
             $this->newUserEmail = $this->editingUser->email;
             $this->editDrawer = true;
+            $this->resetValidation();
         } else {
             $this->warning('User not found.', position: 'toast-bottom');
         }
@@ -76,7 +77,7 @@ new class extends Component {
             $this->editingUser->name = $this->newUserName;
             $this->editingUser->email = $this->newUserEmail;
             if ($this->newUserPassword) {
-                $this->editingUser->password = bcrypt($this->newUserPassword); // Update password if provided
+                $this->editingUser->password = bcrypt($this->newUserPassword);
             }
             $this->editingUser->save();
             $this->success("User {$this->newUserName} updated.", position: 'toast-bottom');
@@ -94,6 +95,7 @@ new class extends Component {
         $this->resetInputFields();
         $this->addUserModal = false;
         $this->editDrawer = false;
+        $this->resetValidation();
     }
 
     public function resetInputFields()
@@ -136,7 +138,8 @@ new class extends Component {
 
     public function openAddUserModal(): void
     {
-        $this->resetInputFields(); // Clear fields before adding a new user
+        $this->resetInputFields();
+        $this->resetValidation();
         $this->addUserModal = true;
     }
 
@@ -160,9 +163,9 @@ new class extends Component {
     <x-header title="Users" separator>
         <x-slot:middle class="!justify-end">
             <div class="flex items-center space-x-2">
-                <x-input placeholder="Search..." wire:model.live.debounce="search" clearable icon="o-magnifying-glass" />
-                <x-button label="Tambah User" class="btn-primary" icon="o-user-plus"
-                    wire:click="$set('addUserModal', true)" />
+                <x-input placeholder="Search..." wire:model.live.debounce="search"  icon="o-magnifying-glass" />
+                <x-button label="Tambah User" class="btn-primary" icon="o-user-plus" wire:click="openAddUserModal"
+                    spinner />
             </div>
         </x-slot:middle>
     </x-header>
@@ -196,7 +199,7 @@ new class extends Component {
         </div>
         <div class="mt-6 flex justify-end gap-2">
             <x-button label="Batal" icon="o-x-mark" class="btn-ghost" @click="$wire.addUserModal = false" />
-            <x-button label="Tambah" class="btn-primary" wire:click="addUser" spinner />
+            <x-button label="Tambah" class="btn-primary" wire:click="saveUser" spinner />
         </div>
     </x-modal>
 
