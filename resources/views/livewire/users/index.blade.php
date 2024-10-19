@@ -11,10 +11,14 @@ new class extends Component {
     public string $search = '';
     public bool $editDrawer = false;
     public bool $confirmDeleteModal = false;
+    public bool $addUserModal = false; // Modal for adding a new user
     public $deleteId = null;
-    public $editingUser = null;
-    public $deletingUser = null; // Menyimpan pengguna yang akan dihapus
+    public $editingUser = null; // User being edited
+    public $deletingUser = null;
     public array $sortBy = ['column' => 'id', 'direction' => 'asc'];
+    public string $newUserName = ''; // New user name
+    public string $newUserEmail = ''; // New user email
+    public string $newUserPassword = ''; // New user password
 
     public function clear(): void
     {
@@ -26,10 +30,11 @@ new class extends Component {
     public function editUser($id): void
     {
         $this->editingUser = User::find($id);
-        $this->editDrawer = true;
-
-        // Debugging
-        if (!$this->editingUser) {
+        if ($this->editingUser) {
+            $this->newUserName = $this->editingUser->name;
+            $this->newUserEmail = $this->editingUser->email;
+            $this->editDrawer = true;
+        } else {
             $this->warning('User not found.', position: 'toast-bottom');
         }
     }
@@ -56,24 +61,46 @@ new class extends Component {
         $this->deletingUser = null;
     }
 
-    // Save user changes
+    // Save user changes or add a new user
     public function saveUser(): void
     {
         if ($this->editingUser) {
+            // Update existing user
+            $this->editingUser->name = $this->newUserName;
+            $this->editingUser->email = $this->newUserEmail;
+            if ($this->newUserPassword) {
+                $this->editingUser->password = bcrypt($this->newUserPassword); // Update password if provided
+            }
             $this->editingUser->save();
             $this->success("User #{$this->editingUser->id} updated.", position: 'toast-bottom');
         } else {
-            $this->warning('No user is being edited.', position: 'toast-bottom');
+            // Create a new user
+            User::create([
+                'name' => $this->newUserName,
+                'email' => $this->newUserEmail,
+                'password' => bcrypt($this->newUserPassword), // Hash the password before saving
+            ]);
+            $this->success("User {$this->newUserName} added.", position: 'toast-bottom');
         }
 
+        // Reset input fields and close modal
+        $this->resetInputFields();
+        $this->addUserModal = false;
         $this->editDrawer = false;
-        $this->editingUser = null;
+    }
+
+    public function resetInputFields()
+    {
+        $this->newUserName = '';
+        $this->newUserEmail = '';
+        $this->newUserPassword = '';
+        $this->editingUser = null; // Reset editing user
     }
 
     // Table headers
     public function headers(): array
     {
-        return [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Name', 'class' => 'w-64'], ['key' => 'email', 'label' => 'E-mail', 'sortable' => false], ['key' => 'created_at', 'label' => 'Dibuat pada']];
+        return [['key' => 'id', 'label' => '#'], ['key' => 'name', 'label' => 'Name'], ['key' => 'email', 'label' => 'E-mail', 'sortable' => false], ['key' => 'created_at', 'label' => 'Dibuat pada']];
     }
 
     // Fetch users from database using Eloquent with pagination
@@ -102,11 +129,16 @@ new class extends Component {
 };
 ?>
 
+
 <div>
     <!-- HEADER -->
     <x-header title="Users" separator progress-indicator>
         <x-slot:middle class="!justify-end">
-            <x-input placeholder="Search..." wire:model.live.debounce="search" clearable icon="o-magnifying-glass" />
+            <div class="flex items-center space-x-2">
+                <x-input placeholder="Search..." wire:model.live.debounce="search" clearable icon="o-magnifying-glass" />
+                <x-button label="Tambah User" class="btn-primary" icon="o-user-plus"
+                    wire:click="$set('addUserModal', true)" />
+            </div>
         </x-slot:middle>
     </x-header>
 
@@ -130,24 +162,32 @@ new class extends Component {
         @endif
     </x-card>
 
-    <!-- EDIT DRAWER -->
-    <x-drawer wire:model="editDrawer" title="Edit User" right separator with-close-button class="lg:w-1/3">
-        <div>
-            @if ($editingUser)
-                <div class="flex flex-col gap-3">
-                    <x-input label="Name" placeholder="Name" wire:model="editingUser.name" />
-                    <x-input label="Email" placeholder="Email" wire:model="editingUser.email" type="email" />
-                </div>
-            @else
-                <p>No user selected.</p>
-            @endif
+    <!-- ADD USER MODAL -->
+    <x-modal wire:model="addUserModal" title="Add New User" class="backdrop-blur" persistent>
+        <div class="space-y-4">
+            <x-input label="Name" placeholder="Enter name" wire:model="newUserName" />
+            <x-input label="Email" placeholder="Enter email" type="email" wire:model="newUserEmail" />
+            <x-input label="Password" placeholder="Enter password" type="password" wire:model="newUserPassword" right />
         </div>
-        <x-slot:actions>
-            <x-button label="Save" icon="o-check" wire:click="saveUser" spinner />
-            <x-button label="Cancel" icon="o-x-mark" wire:click="$set('editDrawer', false)" />
-        </x-slot:actions>
-    </x-drawer>
+        <div class="mt-6 flex justify-end gap-2">
+            <x-button label="Batal" icon="o-x-mark" class="btn-ghost" @click="$wire.addUserModal = false" />
+            <x-button label="Tambah" class="btn-primary" wire:click="addUser" spinner />
+        </div>
+    </x-modal>
 
+    <!-- EDIT USER DRAWER -->
+    <x-drawer wire:model="editDrawer" title="Edit User" right class="lg:w-1/3">
+        <div class="space-y-4">
+            <x-input label="Name" placeholder="Enter name" wire:model="newUserName" />
+            <x-input label="Email" placeholder="Enter email" type="email" wire:model="newUserEmail" />
+            <x-input label="Password" placeholder="Leave blank to keep current password" type="password"
+                wire:model="newUserPassword" />
+        </div>
+        <div class="mt-6 flex justify-end gap-2">
+            <x-button label="Batal" icon="o-x-mark" class="btn-ghost" wire:click="$set('editDrawer', false)" />
+            <x-button label="Simpan" class="btn-primary" wire:click="saveUser" spinner />
+        </div>
+    </x-drawer>
 
     <!-- DELETE CONFIRMATION MODAL -->
     <x-modal wire:model="confirmDeleteModal" class="backdrop-blur" title="Hapus data users?"
